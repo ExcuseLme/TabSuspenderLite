@@ -112,3 +112,5 @@ chrome-extension://<extension-id>/suspended.html?url=<encodeURIComponent(origina
 ## License
 
 [MIT](LICENSE)
+
+> 图标素材取自 Tab Suspender 扩展（Chrome 应用商店）的安装包，仅用于本地/个人项目；如需公开发布，请替换为自己的图标。
