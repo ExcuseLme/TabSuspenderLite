@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Tab Suspender Lite",
   "version": "0.1.0",
-  "description": "A tiny tab suspender: freeze tabs into a lightweight placeholder page and restore them with a click.",
+  "description": "极简的标签页冻结扩展：把暂时不用的标签页换成轻量占位页，点击即可恢复。",
   "minimum_chrome_version": "102",
   "permissions": ["tabs", "favicon"],
   "background": {
@@ -20,14 +20,14 @@
         "default": "Ctrl+Shift+F",
         "mac": "Command+Shift+F"
       },
-      "description": "Suspend the current tab"
+      "description": "冻结当前标签页"
     },
     "suspend-other-tabs": {
       "suggested_key": {
         "default": "Alt+Shift+G",
         "mac": "Alt+Shift+G"
       },
-      "description": "Suspend other tabs in the current window"
+      "description": "冻结当前窗口内除当前页外的所有标签页"
     }
   }
 }
