@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suspended tab</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid;
+      place-items: center;
+      background: #f6f7f9;
+      color: #202124;
+      font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      max-width: min(560px, 86vw);
+      padding: 28px 32px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+      cursor: pointer;
+      user-select: none;
+    }
+    img { width: 32px; height: 32px; border-radius: 6px; }
+    h1 {
+      margin: 2px 0 0;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.35;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+    p {
+      margin: 0;
+      font-size: 12px;
+      color: #5f6368;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+    .hint { color: #9aa0a6; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #202124; color: #e8eaed; }
+      main { background: #292a2d; box-shadow: 0 1px 3px rgba(0, 0, 0, .5); }
+      p { color: #9aa0a6; }
+      .hint { color: #5f6368; }
+    }
+  </style>
+</head>
+<body>
+  <main id="card">
+    <img id="favicon" alt="" width="32" height="32">
+    <h1 id="title"></h1>
+    <p id="url"></p>
+    <p class="hint">Click anywhere to restore</p>
+  </main>
+  <script src="suspended.js"></script>
+</body>
+</html>

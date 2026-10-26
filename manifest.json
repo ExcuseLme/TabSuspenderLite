@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "The Suspender Lite",
+  "version": "0.1.0",
+  "description": "A tiny tab suspender: freeze tabs into a lightweight placeholder page and restore them with a click.",
+  "minimum_chrome_version": "102",
+  "permissions": ["tabs", "favicon"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "commands": {
+    "suspend-current-tab": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "Command+Shift+F"
+      },
+      "description": "Suspend the current tab"
+    },
+    "suspend-other-tabs": {
+      "suggested_key": {
+        "default": "Alt+Shift+G",
+        "mac": "Alt+Shift+G"
+      },
+      "description": "Suspend other tabs in the current window"
+    }
+  }
+}
