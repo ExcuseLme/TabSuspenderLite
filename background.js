@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The Suspender Lite — background service worker.
+ * Tab Suspender Lite — background service worker.
  *
  * Responsibilities:
  *   - turn a normal web tab into a placeholder tab (suspend);

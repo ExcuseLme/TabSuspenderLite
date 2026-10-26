@@ -1,4 +1,4 @@
-# The Suspender Lite
+# Tab Suspender Lite
 
 一个极简的 Chrome 标签页冻结扩展：把暂时不用的标签页换成一张轻量占位页，点击占位页任意位置即可恢复。
 

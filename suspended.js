@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The Suspender Lite — placeholder page.
+ * Tab Suspender Lite — placeholder page.
  *
  * Reads the original URL and title from its own query string, shows a minimal
  * card, and restores the page when the card (or Enter/Space) is used.

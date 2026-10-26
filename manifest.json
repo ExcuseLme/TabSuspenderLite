@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "The Suspender Lite",
+  "name": "Tab Suspender Lite",
   "version": "0.1.0",
   "description": "A tiny tab suspender: freeze tabs into a lightweight placeholder page and restore them with a click.",
   "minimum_chrome_version": "102",
