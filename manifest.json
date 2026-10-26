@@ -23,10 +23,6 @@
       "description": "冻结当前标签页"
     },
     "suspend-other-tabs": {
-      "suggested_key": {
-        "default": "Alt+Shift+G",
-        "mac": "Alt+Shift+G"
-      },
       "description": "冻结当前窗口内除当前页外的所有标签页"
     }
   }

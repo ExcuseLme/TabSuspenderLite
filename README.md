@@ -9,8 +9,9 @@
 ## 特性
 
 - **冻结当前标签页** `Ctrl+Shift+F`（macOS: `⌘+Shift+F`）
-- **冻结当前窗口内除当前页外的所有标签页** `Alt+Shift+G`（macOS: `⌥+Shift+G`）
-  - 注：`Ctrl+Shift+G` 是 Chrome 内置的「查找上一个」快捷键，Chrome 不允许扩展占用，因此默认改用 `Alt+Shift+G`；可以在 `chrome://extensions/shortcuts` 改成任意可用组合
+- **冻结当前窗口内除当前页外的所有标签页**（**默认不绑定快捷键**，需手动配置）
+  - 原因：`Ctrl+Shift+G` 是 Chrome 内置的「查找上一个」，Chrome 不允许扩展占用，因此该命令初始不设默认快捷键
+  - 配置位置：`chrome://extensions/shortcuts`；实测可用的组合例如 `Alt+Shift+G`、`Ctrl+Shift+H`、`Ctrl+Shift+U`
   - 跳过当前标签页
   - 跳过所有固定（pinned）标签页
   - 跳过浏览器内部页面：`chrome://*`、`devtools://*`、`chrome-untrusted://*`、`chrome-search://*`、扩展页面、`about:`（`about:blank` 除外）
@@ -31,7 +32,7 @@
 2. 右上角开启「开发者模式」
 3. 点击「加载已解压的扩展程序」，选择本仓库根目录
 
-快捷键可在 `chrome://extensions/shortcuts` 修改。
+快捷键可在 `chrome://extensions/shortcuts` 修改；其中「冻结其他标签页」默认未绑定，需要在那里手动设置。
 
 ## 占位页 URL 结构
 
@@ -105,7 +106,7 @@ chrome-extension://<extension-id>/suspended.html?url=<encodeURIComponent(origina
 
 ## 已验证行为（Chrome 156 / Windows）
 
-- 两个命令成功绑定（`Ctrl+Shift+F`、`Alt+Shift+G`；`Ctrl+Shift+G` 被 Chrome 保留而无法绑定）
+- `Ctrl+Shift+F` 默认绑定成功；「冻结其他标签页」默认不绑定快捷键（`Ctrl+Shift+G` 被 Chrome 保留，扩展无法占用），可在 `chrome://extensions/shortcuts` 手动配置
 - 冻结后 URL 为 `suspended.html?url=...&title=...`，不含 `time`
 - 占位页：完整标题写入 `document.title`，可见标题截断到 20 字符、URL 截断到 50 字符，完整值在 `title` 属性
 - 图标来自 `_favicon`（32×32），`<link rel=icon>` 与 `<img>` 使用同一 URL，标签栏图标正常
