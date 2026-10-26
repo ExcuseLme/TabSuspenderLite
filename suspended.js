@@ -4,7 +4,16 @@
  * Tab Suspender Lite — placeholder page.
  *
  * Reads the original URL and title from its own query string, shows a minimal
- * card, and restores the page when the card (or Enter/Space) is used.
+ * card, and restores the page when the user clicks it.
+ *
+ * Restore rules (decided on this page, nothing is stored or flagged at
+ * suspension time):
+ *   - `data:` URLs cannot be loaded into an existing tab, so they are opened in
+ *     a new tab right after this one; the address line is the only click target.
+ *   - plain web pages are replaced in place (so the placeholder does not stay in
+ *     history);
+ *   - everything else (`file:`, `view-source:`, `about:blank`, `blob:`) is
+ *     restored by the service worker, because the renderer may not navigate to it.
  *
  * Deliberately dependency-free, no fetch, no storage, no canvas and no data:
  * URIs: the favicon is a plain `_favicon` URL served from Chrome's local cache.
@@ -23,10 +32,27 @@
     return chars.length > max ? chars.slice(0, max).join('') + '…' : value;
   };
 
-  /** Restore: replace the placeholder so it does not stay in history. */
+  const needsNewTab = /^data:/i.test(targetUrl) || /^chrome-extension:\/\//i.test(targetUrl);
+  const rendererCanNavigate = /^https?:\/\//i.test(targetUrl);
+
+  let restoring = false;
+
+  /** Ask the worker to restore this tab (new tab for data:, update for the rest). */
+  const requestRestore = () => {
+    if (restoring) return;
+    restoring = true;
+    chrome.runtime.sendMessage({ type: 'restore-suspended-tab' }, () => {
+      if (chrome.runtime.lastError) restoring = false;
+    });
+  };
+
   const restore = () => {
-    if (!/^https?:\/\//i.test(targetUrl)) return;
-    location.replace(targetUrl);
+    if (!targetUrl) return;
+    if (rendererCanNavigate) {
+      location.replace(targetUrl);
+      return;
+    }
+    requestRestore();
   };
 
   // The tab strip and its hover tooltip get the full title; only the card is truncated.
@@ -49,19 +75,37 @@
     img.alt = '';
   }
 
+  const card = document.getElementById('card');
   const titleEl = document.getElementById('title');
+  const urlEl = document.getElementById('url');
+  const hintEl = document.getElementById('hint');
+
   titleEl.textContent = truncate(fullTitle, TITLE_MAX);
   titleEl.title = fullTitle;
 
-  const urlEl = document.getElementById('url');
   urlEl.textContent = truncate(targetUrl, URL_MAX);
   urlEl.title = targetUrl;
 
-  document.getElementById('card').addEventListener('click', restore);
+  if (needsNewTab) {
+    hintEl.textContent = /^data:/i.test(targetUrl)
+      ? 'data: 类型地址无法原地恢复，将在新标签页中打开'
+      : '扩展页面无法原地恢复，将在新标签页中打开';
+    card.classList.add('new-tab-restore');
+    urlEl.classList.add('clickable');
+    urlEl.addEventListener('click', (event) => {
+      event.stopPropagation();
+      requestRestore();
+    });
+    // Everything else on the card stays inert on purpose: only the address acts.
+  } else {
+    hintEl.textContent = '点击任意位置恢复';
+    card.addEventListener('click', restore);
+  }
+
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      restore();
-    }
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    if (needsNewTab) requestRestore();
+    else restore();
   });
 })();
