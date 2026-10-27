@@ -15,8 +15,10 @@
  *   - everything else (`file:`, `view-source:`, `about:blank`, `blob:`) is
  *     restored by the service worker, because the renderer may not navigate to it.
  *
- * Deliberately dependency-free, no fetch, no storage, no canvas and no data:
- * URIs: the favicon is a plain `_favicon` URL served from Chrome's local cache.
+ * Deliberately dependency-free, no fetch, no storage: the page card uses a
+ * plain `_favicon` URL served from Chrome's local cache, while the tab strip gets
+ * a grayscale, half-transparent canvas rendition of the same icon so suspended
+ * tabs are easy to tell apart.
  */
 
 (() => {
@@ -58,21 +60,53 @@
   // The tab strip and its hover tooltip get the full title; only the card is truncated.
   document.title = fullTitle;
 
-  // Favicon: Chrome's local favicon cache, keyed by the original URL.
+  // Favicon. The card uses Chrome's local favicon cache (a plain `_favicon` URL);
+  // the tab strip gets a grayscale, half-transparent rendition of the same icon.
+  // Both fall back to this extension's icon when there is no usable favicon or
+  // when drawing/linking fails.
+  const fallbackIcon = chrome.runtime.getURL('icons/icon32.png');
+  let link = document.getElementById('favicon');
+  if (!link) {
+    link = document.createElement('link');
+    link.id = 'favicon';
+    link.rel = 'icon';
+    document.head.append(link);
+  }
+  link.type = 'image/png';
+  link.href = fallbackIcon;
+
+  const cardIcon = document.getElementById('favicon-img');
+  cardIcon.alt = '';
+
   if (targetUrl) {
     const icon = new URL(chrome.runtime.getURL('/_favicon/'));
     icon.searchParams.set('pageUrl', targetUrl);
     icon.searchParams.set('size', '32');
     const iconUrl = icon.toString();
 
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.href = iconUrl;
-    document.head.append(link);
+    cardIcon.src = iconUrl;
+    cardIcon.onerror = () => { cardIcon.src = fallbackIcon; };
 
-    const img = document.getElementById('favicon');
-    img.src = iconUrl;
-    img.alt = '';
+    const probe = new Image();
+    probe.decoding = 'async';
+    probe.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        ctx.filter = 'grayscale(1)';
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(probe, 0, 0, 32, 32);
+        link.href = canvas.toDataURL('image/png');
+      } catch {
+        link.href = fallbackIcon;
+      }
+    };
+    probe.onerror = () => { link.href = fallbackIcon; };
+    probe.src = iconUrl;
+  } else {
+    cardIcon.src = fallbackIcon;
   }
 
   const card = document.getElementById('card');

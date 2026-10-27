@@ -24,6 +24,9 @@
 - 占位页展示：站点图标（32px）、标题（超过 20 字符截断）、URL（超过 50 字符截断）
   - 标题与 URL 的完整内容放在原生 `title` 属性里，鼠标悬停可看全文；标签栏标题也保留完整标题
   - `data:` 页面会在占位页上提示「data: 类型地址无法原地恢复，将在新标签页中打开」，地址文字可点击
+- **标签栏图标可区分冻结状态**：标签栏里放的是原站 favicon 的「灰度 + 50% 透明度」版本；页面卡片内仍显示原色 favicon
+  - 占位页加载时用一次 32×32 canvas 生成 PNG data URI（实测约 446 字节），只写到 `<link rel=icon>` 上，不存储、不轮询，canvas 用完即释放
+  - 取图失败、canvas 异常、或没有原站图标时，标签栏与卡片图标都回退为本扩展图标 `icons/icon32.png`
 - 不主动丢弃占位页，交给 Chrome 自己的内存管理；占位页本身只有几 KB
 
 ## 安装（开发者模式）
@@ -46,7 +49,7 @@ chrome-extension://<extension-id>/suspended.html?url=<encodeURIComponent(origina
 
 - **标签页自描述**：原 URL 和标题都编码在标签页自己的 URL 里，不需要 `chrome.storage`，也不怕 MV3 service worker 被随时终止；浏览器重启后 session restore 也能正确恢复。
 - **无状态后台**：service worker 只负责「把标签页导航到占位页」和响应占位页的恢复请求；后台不维护 tabId → URL 的映射，因此不需要处理标签页换 id、worker 重启等状态问题。`http(s)` 的恢复由占位页自己 `location.replace`，其余类型由占位页发消息给 worker 执行（`file:` / `view-source:` / `about:blank` / `blob:` 用 `chrome.tabs.update`，`data:` 用 `chrome.tabs.create` 开新标签）。
-- **图标不写进 URL**：占位页加载时用 [`_favicon`](https://developer.chrome.com/docs/extensions/how-to/ui/favicons) 按目标 URL 向 Chrome 的本地 favicon 缓存取图，不访问原网站，也不生成 data URI。
+- **图标不写进标签页 URL**：占位页加载时用 [`_favicon`](https://developer.chrome.com/docs/extensions/how-to/ui/favicons) 按目标 URL 向 Chrome 的本地 favicon 缓存取图，不访问原网站；页面卡片直接用该 URL，标签栏图标则由 canvas 临时生成一张灰度半透明的 data URI（只在 `<link rel=icon>` 上，不进入标签页 URL、不存储）。
 
 ## 设计取舍
 
@@ -55,7 +58,8 @@ chrome-extension://<extension-id>/suspended.html?url=<encodeURIComponent(origina
 | 用扩展占位页，而不是 `data:text/html` | 扩展无法把已有标签页导航到 `data:` URL；即使绕道新建标签页，`data:` 页面也是独立 opaque origin，会为每个挂起页单独占用一个渲染进程，内存反而更高，且拿不到 `chrome.*` API、无法用 `_favicon`。 |
 | 不调用 `chrome.tabs.discard` 丢占位页 | 保留「切过去就能看到图标/标题/URL」的体验；占位页只有几 KB，Chrome 在内存压力下会自行丢弃它（丢弃后激活重载占位页，仍可点击恢复）。 |
 | 无 content script / 无 storage | 极简，权限最小；代价是恢复后无法保留滚动位置和表单内容（浏览器重载页面的固有行为）。 |
-| 无框架、无外部字体、无图片资源 | 占位页只有一个 HTML + 一个几 KB 的 JS，CSS 内联；favicon 直接指向 `_favicon` URL，不做 fetch/canvas。 |
+| 无框架、无外部字体、无图片资源 | 占位页只有一个 HTML + 一个几 KB 的 JS，CSS 内联；页面卡片图标直接指向 `_favicon` URL，只有标签栏图标在加载时用一次 32×32 canvas 生成 data URI。 |
+| 标签栏图标用「灰度 + 半透明」版本 | 直接显示原图无法区分冻结状态；canvas 只生成一张 32×32 PNG（实测约 446 字节），失败回退本扩展图标，不新增图标素材。 |
 | http(s) 恢复用 `location.replace` | 用原页面替换占位页，避免占位页留在前进/后退历史里。 |
 | 其余类型恢复交给 service worker | 渲染进程不能导航到 `file:` / `view-source:` 等地址；`data:` 更是被 Chrome 禁止在已有标签页中打开，只能新建标签页。 |
 | 跳过浏览器内部页面 | `chrome://`、`devtools://` 等页面无法安全恢复（导航可能被拒绝，页面状态也会丢失），因此不冻结。 |
@@ -101,7 +105,7 @@ chrome-extension://<extension-id>/suspended.html?url=<encodeURIComponent(origina
 调试提示：
 
 - MV3 扩展页面的默认 CSP 禁止内联 `<script>`，所以占位页逻辑必须放在 `suspended.js` 里（CSS 可以内联）。
-- 占位页的 favicon 用 `chrome.runtime.getURL('/_favicon/')` 构造，离开扩展上下文（如普通网页）无法使用。
+- 占位页的图标：卡片 `<img>` 用 `chrome.runtime.getURL('/_favicon/')` 构造；标签栏图标再画到 32×32 canvas（`ctx.filter = 'grayscale(1)'` + `globalAlpha = 0.5`）导出 data URI，失败时回退 `icons/icon32.png`。
 - `background.js` 末尾把两个冻结函数挂到了 worker 的全局对象上，便于在 service worker 控制台里手动调用测试。
 
 ## 已验证行为（Chrome 156 / Windows）
@@ -109,7 +113,7 @@ chrome-extension://<extension-id>/suspended.html?url=<encodeURIComponent(origina
 - `Ctrl+Shift+F` 默认绑定成功；「冻结其他标签页」默认不绑定快捷键（`Ctrl+Shift+G` 被 Chrome 保留，扩展无法占用），可在 `chrome://extensions/shortcuts` 手动配置
 - 冻结后 URL 为 `suspended.html?url=...&title=...`，不含 `time`
 - 占位页：完整标题写入 `document.title`，可见标题截断到 20 字符、URL 截断到 50 字符，完整值在 `title` 属性
-- 图标来自 `_favicon`（32×32），`<link rel=icon>` 与 `<img>` 使用同一 URL，标签栏图标正常
+- 图标：页面卡片用 `_favicon` 原图；标签栏为同一图标的「灰度 + 50% 透明度」data URI（实测 32×32、PNG 约 446 字节，中心像素 `rgba(120,120,120,128)`）；无 URL / 取图失败 / canvas 异常时回退为 `icons/icon32.png`
 - `http(s)` 页面：点击占位页任意位置原地恢复（标签页 id 不变）；`Enter` / `Space` 也可
 - `data:` 页面：占位页显示「data: 类型地址无法原地恢复，将在新标签页中打开」，地址文字可点击；点击地址在**紧邻位置（index+1）**打开新标签页并激活，占位页保留；点击其它区域无动作
 - `file:`、`view-source:`、`about:blank`、`blob:`（creator 仍存活时）均可通过占位页 → service worker 恢复，标签页 id 不变
